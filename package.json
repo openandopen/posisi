@@ -1,0 +1,25 @@
+{
+  "name": "posisi",
+  "private": true,
+  "devDependencies": {
+    "lerna": "^5.1.8"
+  },
+  "scripts": {
+    "install": "lerna bootstrap",
+    "dev": "lerna exec --scope=posisi -- npm run dev",
+    "dev:vue": "lerna run --scope=posisi --scope=@posisi/vue dev --parallel",
+    "dev:react": "lerna run --scope=posisi --scope=@posisi/react dev --parallel",
+    "dev:uni": "",
+    "dev:taro": "",
+    "dev:mini": "",
+    "build": "lerna run build --sort --stream",
+    "update-version": "lerna version --conventional-commits --no-push --no-changelog --no-git-tag-version",
+    "publish-to-npm": "lerna publish from-package",
+    "publish-beta": "lerna publish --no-git-tag-version --dist-tag beta"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}
+
+

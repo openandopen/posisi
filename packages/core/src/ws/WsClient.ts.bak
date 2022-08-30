@@ -1,0 +1,135 @@
+/**
+ *@desc
+ *@author liudejian
+ *@date 2020-03-21 22:11
+ **/
+import ReconnectingWebSocket, {Options} from 'reconnecting-websocket';
+import WS from 'ws';
+
+const SOCKET_CACHE = new Map<string, ReconnectingWebSocket>();
+const DEFAULT_KEY = "default";
+
+/**
+ * websocket客户端
+ */
+export   class WsClient {
+    /**
+     * 默认参数
+     */
+    public static defaultOptions(): Options {
+        let defaultOption = {
+            WebSocket: WS,
+            maxReconnectionDelay: 10000,
+            minReconnectionDelay: 1000 + Math.random() * 4000,
+            reconnectionDelayGrowFactor: 1.3,
+            minUptime: 5000,
+            connectionTimeout: 4000,
+            maxRetries: 600000,
+            maxEnqueuedMessages: 10, //在重新连接之前要缓冲的最大消息数
+            startClosed: false,
+            debug: false,
+        } as Options;
+        return defaultOption;
+    }
+
+    /**
+     * 创建socket
+     * @param cacheKey cacheKey缓存KEY
+     * @param uri websocket连接服务地址
+     * @param option 连接参数
+     * @param onMessageCallback 连接成功后接口消息
+     */
+    public static createWs(cacheKey: string, uri: string, option: Options, onMessageCallback: Function): Promise<ReconnectingWebSocket> {
+        return new Promise(((resolve, reject) => {
+            try {
+                let socket = new ReconnectingWebSocket(uri, [], option);
+                //连接打开
+                socket.onopen = function (event: any) {
+                    switch (socket.readyState) {
+                        case 0:
+                            reject("正在链接中")
+                            break;
+                        case 1:
+                            SOCKET_CACHE.set(cacheKey, socket);
+                            resolve(socket)
+                            break;
+                        case 2:
+                            reject("连接正在关闭")
+                            break;
+                        case 3:
+                            reject("连接已关闭或者没有链接成功")
+                            break;
+                    }
+                    //心跳
+                    window.setInterval(function () {
+                        WsClient.hearBeat(cacheKey);
+                    }, 30000)
+                }
+
+                socket.onerror = function (event: any) {
+                    SOCKET_CACHE.delete(cacheKey);
+                    reject(event)
+                };
+                socket.onclose = function (event: any) {
+                    SOCKET_CACHE.delete(cacheKey);
+                    reject(event)
+                };
+                socket.onmessage = function (event: any) {
+                    if (onMessageCallback) {
+                        onMessageCallback(event.data);
+                    }
+                }
+            } catch (e) {
+                reject(e);
+            }
+        }));
+    }
+
+    /**
+     * 创建默认scoket连接
+     * @param uri
+     * @param onMessageCallback
+     */
+    public static createDefaultWs(uri: string, onMessageCallback: Function): Promise<ReconnectingWebSocket> {
+        let defaultOption = this.defaultOptions();
+        return WsClient.createWs(DEFAULT_KEY, uri, defaultOption, onMessageCallback);
+    }
+
+    /**
+     * 获取默认socket
+     */
+    public static getDefaultSocket(): Promise<ReconnectingWebSocket> {
+        return WsClient.getSocket(DEFAULT_KEY);
+    }
+
+    /**
+     *
+     * @param cacheKey 缓存KEY
+     */
+    public static getSocket(cacheKey: string): Promise<ReconnectingWebSocket> {
+        return new Promise(((resolve, reject) => {
+            let socket = SOCKET_CACHE.get(cacheKey);
+            if (socket == null || socket.readyState != 1) {
+                reject("socket is error")
+            } else {
+                resolve(socket);
+            }
+        }))
+    }
+
+    /**
+     * 心跳
+     */
+    public static hearBeat(cacheKey: string): void {
+        let message = {
+            ping: 1
+        };
+        WsClient.getSocket(cacheKey).then(socket => {
+            socket.send(JSON.stringify(message));
+        }).catch(reason => {
+            console.error("socket error:", reason);
+        })
+    }
+
+
+}
