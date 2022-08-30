@@ -5,6 +5,8 @@
 ```
    作者: 黑肱
    邮箱: zuiwoxing@qq.com
+   源码: https://gitee.com/zuiwoxing/posisi 
+        https://github.com/openandopen/posisi
    1. 项目描述:  本组件以typescript基础,提供规范,方便快捷的前端业务操作控制组件，提高开发效率。
    2. 组件功能:
        2.1 IOC容器,类似spring的IOC容器
