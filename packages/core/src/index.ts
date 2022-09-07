@@ -9,7 +9,7 @@ export {StorageUtil} from "./common/utils/StorageUtil";
 export {ConfigUtil} from "./config/ConfigUtil";
 export {CommonTreeUtil} from "./utils/CommonTreeUtil"
 //通用枚举
-export {ParamType, RequestMethod} from "./feign/enums";
+export {ParamType, RequestMethod,HttpStatus,BizCode} from "./feign/enums";
 //AOP工具
 export {AopUtil} from "./aop/AopUtil";
 export * from "./aop/MethodHandler";
@@ -18,7 +18,9 @@ export {FeignClient,RequestMapping} from "./feign/decorators"
 export {Response} from "./feign/model/Response"
 export {Request} from "./feign/model/Request"
 export {Page} from "./feign/model/Page"
+export {HttpRequest} from "./feign/utils/HttpRequest"
 export {ClassMeta,ReqInfo,MethodMeta,ParamMeta} from "./feign/model/Meta"
+
 //通用model
 export {AccountContext} from './common/account/AccountContext'
 export {UserInfo} from "./model/UserInfo"

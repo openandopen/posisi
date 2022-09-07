@@ -6,7 +6,7 @@
 
 import {UrlUtil} from "../../common";
 import {ParamType} from "../../feign/enums";
-import HttpRequest from "../../feign/utils/HttpRequest";
+import {HttpRequest} from "../../feign/utils/HttpRequest";
 import {ClassMeta, MethodMeta, ReqInfo} from "../../feign/model/Meta";
 import {ConfigUtil} from "../../config/ConfigUtil";
 

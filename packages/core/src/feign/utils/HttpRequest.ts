@@ -38,7 +38,7 @@ let loading = null;
  * @author liudejian
  * @date 2020-07-06 16:02:30
  */
-export default class HttpRequest {
+export  class HttpRequest {
 
     //基础URL(http://localhost:8080)
     private static BASE_URL: string;
