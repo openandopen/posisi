@@ -3,7 +3,7 @@
  *@author liudejian
  *@date 2022-08-30 16:22
  **/
-import AopUtil from "./AopUtil";
+import {AopUtil} from "./AopUtil";
 import {MethodHandler} from "./MethodHandler";
 import {Logger} from "../logger";
 
