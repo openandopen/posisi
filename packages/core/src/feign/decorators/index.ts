@@ -10,6 +10,7 @@ import {HttpRequest} from "../../feign/utils/HttpRequest";
 import {ClassMeta, MethodMeta, ReqInfo} from "../../feign/model/Meta";
 import {ConfigUtil} from "../../config/ConfigUtil";
 
+
 const classPropKey = Symbol("classPropKey");
 const classMetaKey = Symbol("classMetaKey");
 const PATTERN = /\{(.*)\}/g
@@ -58,7 +59,8 @@ export function RequestMapping(methodMeta: MethodMeta) {
                     let pIndex = param.index;
                     // @ts-ignore
                     let paramValue = arguments[pIndex];
-                    if (param.require && (paramValue == null || paramValue == undefined || paramValue == "")) {
+                    if (param.require && (paramValue == null || paramValue == undefined || paramValue === "")) {
+                        console.error(params,pIndex,arguments,paramValue)
                         throw new Error(param.name + " 为必填项!");
                     }
                     if (param.type == ParamType.HEADER) {

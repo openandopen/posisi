@@ -10,6 +10,7 @@ export {ConfigUtil} from "./config/ConfigUtil";
 export {CommonTreeUtil} from "./utils/CommonTreeUtil"
 //通用枚举
 export {ParamType, RequestMethod,HttpStatus,BizCode} from "./feign/enums";
+export {Sex,Status,CommonYn,LoginType} from "./common/enums/index"
 //AOP工具
 export {AopUtil} from "./aop/AopUtil";
 export * from "./aop/MethodHandler";
@@ -36,7 +37,7 @@ export {IocUtil} from './ioc/util/IocUtil';
 export {Logger} from "./logger"
 //加密工具
 export {RsaUtil} from "./utils/RsaUtil"
-
+export {RegexUtil,Word} from "./utils/RegexUtil"
 
 //websocket
 //export {WsClient} from "./ws/WsClient"

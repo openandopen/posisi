@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "pretty": true,
+    "target": "es2015",
+    "module": "esnext",
+    "moduleResolution": "Node",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "importHelpers": true,
+
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    /*  experimentalDecorators,emitDecoratorMetadata @Service使用注解必须开启这两个属性 */
+    "esModuleInterop": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    /***打包后是否生成声明文件***/
+    "declaration": true,
+    "declarationDir": "dist/types", //声明文件目录
+    "outDir": "dist",
+    "noEmit": true
+  },
+  "include": [ "src/**/*"],
+  "exclude": ["node_modules/**","dist"],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

@@ -1,6 +1,6 @@
 import axios, {AxiosInstance, AxiosRequestConfig} from 'axios'
 
-import {RequestMethod} from "../enums";
+import {BizCode, RequestMethod} from "../enums";
 import {ReqInfo} from "../model/Meta";
 import {Response} from "../model/Response"
 import {AccountContext} from "../../common/account/AccountContext";
@@ -33,31 +33,41 @@ export function isMatchExclude(url: string): boolean {
 
 // @ts-ignore
 let loading = null;
+
 /**
  * @desc 所有后台API配置
  * @author liudejian
  * @date 2020-07-06 16:02:30
  */
-export  class HttpRequest {
+export class HttpRequest {
 
     //基础URL(http://localhost:8080)
     private static BASE_URL: string;
 
     private static IS_DEBUG: boolean = true;
 
-    private static ENABLE_LOADING:boolean = true;
+    private static ENABLE_LOADING: boolean = true;
 
     public static AXIOS_INSTANCE: AxiosInstance;
+    /**
+     * 异常回调
+     * @private
+     */
+    private static errorCallback: Function;
+
+    public static setErrorCallback(callback: Function) {
+        HttpRequest.errorCallback = callback;
+    }
 
     constructor(baseUrl: string) {
         HttpRequest.setBaseUrl(baseUrl);
     }
 
-    public static enableLoading(){
+    public static enableLoading() {
         HttpRequest.ENABLE_LOADING = true;
     }
 
-    public static disableLoading(){
+    public static disableLoading() {
         HttpRequest.ENABLE_LOADING = false;
     }
 
@@ -85,7 +95,7 @@ export  class HttpRequest {
     }
 
     private static gotoLogin() {
-      //  router.push("/login")
+        //  router.push("/login")
     }
 
     /**
@@ -96,7 +106,7 @@ export  class HttpRequest {
     private static initGlobalRequestInterceptor(currentInstance: AxiosInstance) {
         currentInstance.interceptors.request.use(
             //【1】请求配置参数
-            (config:any) => {
+            (config: any) => {
                 let token = AccountContext.getToken();
                 let url = config.url || "";
                 if ((token == null || token == undefined) && !isMatchExclude(url)) {
@@ -109,14 +119,14 @@ export  class HttpRequest {
                 }
                 config.headers["Authorization"] = 'Bearer ' + token;
 
-               if (this.ENABLE_LOADING) {
-                 /*  loading = ElLoading.service({
-                       lock: true,
-                       text: '正在请求数据',
-                       background: 'rgba(237,234,234,0.5)',
-                       spinner: 'el-icon-loading'
-                   })*/
-               }
+                if (this.ENABLE_LOADING) {
+                    /*  loading = ElLoading.service({
+                          lock: true,
+                          text: '正在请求数据',
+                          background: 'rgba(237,234,234,0.5)',
+                          spinner: 'el-icon-loading'
+                      })*/
+                }
 
 
                 if (HttpRequest.IS_DEBUG) {
@@ -125,9 +135,13 @@ export  class HttpRequest {
                 return config
             },
             //【2】请求异常
-            (error:any) => {
+            (error: any) => {
                 if (HttpRequest.IS_DEBUG) {
                     console.log("request-error:", error)
+                }
+                let res = Response.fail().setStatus(0).setMessage("请求异常:" + error).setCode(BizCode.FAIL);
+                if (HttpRequest.errorCallback) {
+                    HttpRequest.errorCallback(res)
                 }
                 return Promise.reject(error)
             }
@@ -142,10 +156,10 @@ export  class HttpRequest {
     private static initGlobalResponseInterceptor(currentInstance: AxiosInstance) {
         currentInstance.interceptors.response.use(
             //【1】响应对象
-            (response:any) => {
-        /*        if (loading && this.ENABLE_LOADING) {
-                    loading.close()
-                }*/
+            (response: any) => {
+                /*        if (loading && this.ENABLE_LOADING) {
+                            loading.close()
+                        }*/
                 if (HttpRequest.IS_DEBUG) {
                     console.log("response-data:", response)
                 }
@@ -158,7 +172,7 @@ export  class HttpRequest {
                 //响应头信息
                 const headers = response.headers;
 
-               //  console.log("=====111====", httpStatus, resText, resultData, headers)
+                //  console.log("=====111====", httpStatus, resText, resultData, headers)
                 if (200 === httpStatus) {
                     return resultData;
                 } else {
@@ -169,29 +183,38 @@ export  class HttpRequest {
                 }
             },
             //【2】 响应异常
-            (error:any) => {
-            /*    if (loading && this.ENABLE_LOADING) {
-                    loading.close()
-                }*/
+            (error: any) => {
+                /*    if (loading && this.ENABLE_LOADING) {
+                        loading.close()
+                    }*/
                 if (HttpRequest.IS_DEBUG) {
                     console.log("response-error:", error)
                 }
-               // console.error("error=", error)
+                let res: Response<any> = {} as any;
+                // console.error("error=", error)
                 //错误响应对象
                 let errResponse = error.response;
                 if (errResponse == undefined && error.isAxiosError) {
-                    return Response.fail().setStatus(404).setMessage("请求服务无响应");
+                    res = Response.fail().setStatus(404).setMessage("请求服务无响应");
+                    if (HttpRequest.errorCallback) {
+                        HttpRequest.errorCallback(res)
+                    }
+                    return res;
                 }
                 //响应的业务异常数据
                 let errData = errResponse.data;
 
                 if (errData) {
-                     //console.log("errData============",errData)
+                    //console.log("errData============",errData)
                     let message = errData.message;
-                     if (!message) {
-                         message = errData.error;
-                     }
-                    return Response.fail().setStatus(errData.status).setMessage(message).setCode(errData.code);
+                    if (!message) {
+                        message = errData.error;
+                    }
+                    res = Response.fail().setStatus(errData.status).setMessage(message).setCode(errData.code);
+                    if (HttpRequest.errorCallback) {
+                        HttpRequest.errorCallback(res)
+                    }
+                    return res;
                 }
 
                 //请求配置数据
@@ -203,10 +226,11 @@ export  class HttpRequest {
                 //状态描述
                 const resText = errResponse.statusText;
                 error = HttpRequest.httStatusConvert(error, httpStatus, resText);
-                // console.log("error===11=====",error)
-                return Response.fail().setMessage(error.message).setStatus(httpStatus);
-                // return Promise.reject(errData)
-                // return Promise.reject(error)
+                res = Response.fail().setMessage(error.message).setStatus(httpStatus);
+                if (HttpRequest.errorCallback) {
+                    HttpRequest.errorCallback(res)
+                }
+                return res;
             }
         )
     }

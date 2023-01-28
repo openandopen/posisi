@@ -42,7 +42,7 @@ export class Logger {
      * @private
      */
         //  private category: string = "{time} {level} {module} {msg}";
-    private static ENABLE: boolean = true;
+    public static ENABLE: boolean = true;
 
     /**
      * 默认info级别

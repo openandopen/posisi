@@ -7,7 +7,7 @@ import {BizCode, HttpStatus} from "../enums";
 import {CommonUtil} from "../../common";
 
 
-export   class Response<T> {
+export class Response<T> {
     //响应结果
     result?: T;
     //messgae
@@ -18,6 +18,29 @@ export   class Response<T> {
     code: number = BizCode.SUCCESS;
     //响应参数(扩展参数)
     params?: Map<string, object>;
+
+    public static COMMON_SUCCESS_TIP = "操作成功"
+
+    private static errorCallback?: Function;
+
+    private static successCallback?: Function;
+
+    /**
+     * 用户设置通用错误回调-处理
+     * @param errorCallback
+     */
+    public static setErrorCallback(errorCallback: Function) {
+        Response.errorCallback = errorCallback;
+    }
+
+    /**
+     * 用户设置通用成功回调-处理
+     * @param successCallback
+     */
+    public static setSuccessCallback(successCallback: Function) {
+        Response.successCallback = successCallback;
+    }
+
 
     public isSuccess(): boolean {
         return this.status === 200 && this.code === BizCode.SUCCESS;
@@ -34,6 +57,7 @@ export   class Response<T> {
         }
         return this;
     }
+
     public error(callback: Function): this {
         if (!this.isSuccess() && callback) {
             callback(this.getMessage())
@@ -48,9 +72,14 @@ export   class Response<T> {
     public successTip(...success: any): this {
         if (this.isSuccess()) {
             if (success != null && success != undefined) {
-                console.log(success[0])
+               // console.log(success[0])
+                if (Response.successCallback) {
+                    Response.successCallback(success)
+                }
             } else {
-                console.log("操作成功");
+                if (Response.successCallback) {
+                    Response.successCallback(Response.COMMON_SUCCESS_TIP)
+                }
             }
         }
         return this;
@@ -63,9 +92,13 @@ export   class Response<T> {
     public errorTip(...errors: any): this {
         if (!this.isSuccess()) {
             if (errors != null && errors != undefined && errors.length > 0) {
-                console.error(errors[0]);
+                if (Response.errorCallback) {
+                    Response.errorCallback(errors[0])
+                }
             } else {
-                console.error(this.getMessage());
+                if (Response.errorCallback) {
+                    Response.errorCallback(this.getMessage())
+                }
             }
         }
         return this;

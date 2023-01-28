@@ -31,6 +31,23 @@ export class UrlUtil {
         }
     }
 
+    /**
+     * 解析URI
+     * @param uri
+     */
+    public static parseUri(uri:string):any {
+        if (uri.indexOf("?") !=-1) {
+            uri = uri.substring(1);
+        }
+        let params = {}, queries, temp, i, l;
+        queries = uri.split("&");
+        for ( i = 0, l = queries.length; i < l; i++ ) {
+            temp = queries[i].split('=');
+            params[temp[0]] = temp[1];
+        }
+        return params;
+    }
+
 }
 
 

@@ -19,7 +19,7 @@ export   class AccountContext {
     private static TOKEN = "token";
     private static ROUTER = "router";
 
-    public static userInfo?: UserInfo;
+    public static userInfo: UserInfo;
 
 
     /**
@@ -38,12 +38,12 @@ export   class AccountContext {
     /**
      * 获取用户信息
      */
-    public static getUserInfo(): UserInfo | undefined {
+    public static getUserInfo(): UserInfo {
         let userInfo = AccountContext.userInfo;
         if (userInfo == undefined || userInfo == null) {
             AccountContext.userInfo = StorageUtil.getSessionStorage(AccountContext.USER_INFO);
         }
-        return AccountContext.userInfo;
+        return AccountContext.userInfo || {};
     }
 
 

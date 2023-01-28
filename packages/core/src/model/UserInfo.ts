@@ -10,7 +10,10 @@ export   class UserInfo {
      */
 
     id: number = 0;
-
+    /**
+     * UID
+     */
+    uid:string = "";
     /**
      * 邮箱
      */
@@ -33,6 +36,10 @@ export   class UserInfo {
      **/
 
     username?: string;
+    /**
+     * 昵称
+     */
+    nickname?:string;
 
     token?: string;
     /**
