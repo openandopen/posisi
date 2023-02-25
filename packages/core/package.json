@@ -1,7 +1,7 @@
 {
   "name": "@zuiwoxing/posisi",
   "private": false,
-  "version": "0.0.22",
+  "version": "0.0.27",
   "description": "一款基于typescript 前端控制组件,包括(IOC,AOP,Feign,Logger,Util等)",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -10,6 +10,11 @@
   "types": "dist/index.d.ts",
   "author": "ldj <zuiwoxing@qq.com>",
   "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "rollup --config rollup.config.dev.js",
+    "build": "rollup --config rollup.config.build.js"
+  },
   "files": [
     "dist",
     "types",
@@ -22,25 +27,20 @@
     "Log",
     "Util"
   ],
-  "scripts": {
-    "dev": "rollup --config rollup.config.dev.js --bundleConfigAsCjs",
-    "build": "rollup --config rollup.config.build.js"
-  },
   "dependencies": {
     "@babel/core": "^7.18.6",
     "@babel/plugin-external-helpers": "^7.18.6",
     "@babel/plugin-transform-runtime": "^7.18.6",
     "@babel/preset-env": "^7.18.6",
     "@rollup/plugin-babel": "^5.3.1",
-    "axios": "^1.2.5",
     "bufferutil": "^4.0.7",
     "esno": "^0.16.3",
+    "axios": "1.2.0",
     "has-flag": "^5.0.1",
     "js-cookie": "^3.0.1",
     "jsencrypt": "^3.2.1",
     "jsrsasign": "^10.5.25",
     "mitt": "^3.0.0",
-    "reconnecting-websocket": "^4.4.0",
     "reflect-metadata": "^0.1.13",
     "rollup-plugin-node-builtins": "^2.1.2",
     "rollup-plugin-node-globals": "^1.4.0"
@@ -53,18 +53,17 @@
     "@rollup/plugin-typescript": "^11.0.0",
     "@types/js-cookie": "^3.0.2",
     "@types/jsrsasign": "^10.5.5",
-    "@types/ws": "^8.5.4",
-    "@typescript-eslint/parser": "^5.49.0",
+    "@typescript-eslint/parser": "^5.50.0",
     "core-js": "^3.27.2",
     "eslint": "^8.32.0",
     "eslint-plugin-prettier": "^4.2.1",
     "prettier": "^2.8.3",
-    "rollup": "^3.11.0",
+    "rollup": "^3.12.0",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-dts": "^5.1.1",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.34.1",
     "tslib": "^2.5.0",
-    "typescript": "^4.9.4"
+    "typescript": "^4.9.5"
   }
 }

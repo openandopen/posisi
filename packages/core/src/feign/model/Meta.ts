@@ -16,7 +16,7 @@ export class ClassMeta {
      */
     serverUrl: string = "/";
     /**
-     * URL(example: /user/getName)
+     * 前缀URI(example: /user/getName)
      */
     uri: string = "/";
     /**

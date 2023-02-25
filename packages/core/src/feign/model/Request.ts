@@ -5,7 +5,7 @@
  **/
 export   class Request<T> {
     //请求body对象
-    body?: T;
+    data?: T;
     //分页-开始下标记录索引(从0开始)
     start: number = 0;
     //分页-限制返回条数
@@ -13,8 +13,8 @@ export   class Request<T> {
     //请求扩展参数
     extendParams?: Map<string, Object>;
 
-    setBody(body: T): Request<T> {
-        this.body = body;
+    setData(data: T): Request<T> {
+        this.data = data;
         return this;
     }
 
@@ -35,11 +35,11 @@ export   class Request<T> {
 
     /**
      * 构建实例
-     * @param body
+     * @param data
      * @param start
      * @param limit
      */
-    public static build(body: any, start: number, limit: number): Request<any> {
-        return new Request<any>().setBody(body).setStart(start).setLimit(limit);
+    public static build(data: any, start: number, limit: number): Request<any> {
+        return new Request<any>().setData(data).setStart(start).setLimit(limit);
     }
 }

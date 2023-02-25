@@ -9,7 +9,7 @@ import {CommonUtil} from "../../common";
 
 export class Response<T> {
     //响应结果
-    result?: T;
+    data?: T;
     //messgae
     message?: string;
     //响应的http 状态
@@ -119,13 +119,13 @@ export class Response<T> {
         return this;
     }
 
-    public setResult(result: T): Response<T> {
-        this.result = result;
+    public setData(data: T): Response<T> {
+        this.data = data;
         return this;
     }
 
     public getResult(): T {
-        return this.result || (new Object() as T);
+        return this.data || (new Object() as T);
     }
 
     public setCode(code: number): Response<T> {

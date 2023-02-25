@@ -113,6 +113,7 @@ export class HttpRequest {
                     this.gotoLogin();
                 }
                 config.headers = {
+                    'X-Custom-Header-REQ_TIME': new Date().getTime(),
                     'Access-Control-Allow-Origin': '*',
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
@@ -411,7 +412,7 @@ export class HttpRequest {
      */
     public static wrapOkResponse(res: Response<any>): Response<any> {
         return Response.build(res.status, res.code)
-            .setResult(res.result).addAllParams(res.params).setMessage(res.message);
+            .setData(res.data).addAllParams(res.params).setMessage(res.message);
     }
 
     /**
