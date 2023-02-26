@@ -4,17 +4,13 @@ import {BizCode, RequestMethod} from "../enums";
 import {ReqInfo} from "../model/Meta";
 import {Response} from "../model/Response"
 import {AccountContext} from "../../common/account/AccountContext";
-//import AccountContext from "@/common/account/AccountContext";
-//import router from '@/router/index';
+import {FeignConfig} from "../../config/Configs";
+
+
 
 //URL模板
 const PATTERN = /\{(\w*[:]*[=]*\w+)\}(?!})/g
 
-/**
- * 排除URL后缀(正则匹配)
- * @type {RegExp[]}
- */
-const excludeUrls = [/\/login$/, /\/register$/, /\/resetpwdByToken$/, /\/recoverPwd$/, /\/resetpwd$/, /\/enums\/all$/]
 
 /**
  * 是否匹配排除的URL
@@ -22,7 +18,7 @@ const excludeUrls = [/\/login$/, /\/register$/, /\/resetpwdByToken$/, /\/recover
  * @returns {boolean}
  */
 export function isMatchExclude(url: string): boolean {
-    let value = excludeUrls.find(value => {
+    let value = FeignConfig.EXCLUDE_URLS.find(value => {
         return url.search(value) > 0;
     })
     if (value != null && value != undefined) {
@@ -31,8 +27,7 @@ export function isMatchExclude(url: string): boolean {
     return false;
 }
 
-// @ts-ignore
-let loading = null;
+
 
 /**
  * @desc 所有后台API配置
@@ -41,62 +36,17 @@ let loading = null;
  */
 export class HttpRequest {
 
-    //基础URL(http://localhost:8080)
-    private static BASE_URL: string;
 
-    private static IS_DEBUG: boolean = true;
-
-    private static ENABLE_LOADING: boolean = true;
 
     public static AXIOS_INSTANCE: AxiosInstance;
-    /**
-     * 异常回调
-     * @private
-     */
-    private static errorCallback: Function;
-
-    public static setErrorCallback(callback: Function) {
-        HttpRequest.errorCallback = callback;
-    }
 
     constructor(baseUrl: string) {
-        HttpRequest.setBaseUrl(baseUrl);
+        FeignConfig.setBaseUrl(baseUrl);
     }
 
-    public static enableLoading() {
-        HttpRequest.ENABLE_LOADING = true;
-    }
 
-    public static disableLoading() {
-        HttpRequest.ENABLE_LOADING = false;
-    }
 
-    /**
-     * 启用DEBUG
-     * @param isDebug
-     */
-    public static enableDebug(): void {
-        HttpRequest.IS_DEBUG = true;
-    }
 
-    /**
-     * 禁用DEBUG
-     */
-    public static disableDebug(): void {
-        HttpRequest.IS_DEBUG = false;
-    }
-
-    /**
-     * 设置基础URL
-     * @param baseUrl
-     */
-    public static setBaseUrl(baseUrl: string): void {
-        HttpRequest.BASE_URL = baseUrl;
-    }
-
-    private static gotoLogin() {
-        //  router.push("/login")
-    }
 
     /**
      * 请求拦截器
@@ -110,17 +60,19 @@ export class HttpRequest {
                 let token = AccountContext.getToken();
                 let url = config.url || "";
                 if ((token == null || token == undefined) && !isMatchExclude(url)) {
-                    this.gotoLogin();
+                    if (FeignConfig.gotoLoginCallback) {
+                        FeignConfig.gotoLoginCallback(url)
+                    }
                 }
-                config.headers = {
-                    'X-Custom-Header-REQ_TIME': new Date().getTime(),
-                    'Access-Control-Allow-Origin': '*',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
+                // 请求头信息
+                for (let key in FeignConfig.COMMON_HEADERS) {
+                    config.headers[key] = FeignConfig.COMMON_HEADERS[key];
                 }
+                config.headers["X-Custom-Header-REQTIME"] = new Date().getTime();
                 config.headers["Authorization"] = 'Bearer ' + token;
 
-                if (this.ENABLE_LOADING) {
+                if (FeignConfig.LOADING && FeignConfig.loadingStartCallback) {
+                    FeignConfig.loadingStartCallback();
                     /*  loading = ElLoading.service({
                           lock: true,
                           text: '正在请求数据',
@@ -130,19 +82,22 @@ export class HttpRequest {
                 }
 
 
-                if (HttpRequest.IS_DEBUG) {
+                if (FeignConfig.IS_DEBUG) {
                     console.log("request-config:", config)
                 }
                 return config
             },
             //【2】请求异常
             (error: any) => {
-                if (HttpRequest.IS_DEBUG) {
+                if (FeignConfig.IS_DEBUG) {
                     console.log("request-error:", error)
                 }
+                if (FeignConfig.LOADING && FeignConfig.loadingEndCallback) {
+                    FeignConfig.loadingEndCallback();
+                }
                 let res = Response.fail().setStatus(0).setMessage("请求异常:" + error).setCode(BizCode.FAIL);
-                if (HttpRequest.errorCallback) {
-                    HttpRequest.errorCallback(res)
+                if (FeignConfig.errorCallback) {
+                    FeignConfig.errorCallback(res.getMessage())
                 }
                 return Promise.reject(error)
             }
@@ -158,10 +113,11 @@ export class HttpRequest {
         currentInstance.interceptors.response.use(
             //【1】响应对象
             (response: any) => {
-                /*        if (loading && this.ENABLE_LOADING) {
-                            loading.close()
-                        }*/
-                if (HttpRequest.IS_DEBUG) {
+                    if (FeignConfig.LOADING && FeignConfig.loadingEndCallback) {
+                        FeignConfig.loadingEndCallback();
+                    }
+
+                if (FeignConfig.IS_DEBUG) {
                     console.log("response-data:", response)
                 }
                 // http状态
@@ -188,7 +144,7 @@ export class HttpRequest {
                 /*    if (loading && this.ENABLE_LOADING) {
                         loading.close()
                     }*/
-                if (HttpRequest.IS_DEBUG) {
+                if (FeignConfig.IS_DEBUG) {
                     console.log("response-error:", error)
                 }
                 let res: Response<any> = {} as any;
@@ -197,8 +153,8 @@ export class HttpRequest {
                 let errResponse = error.response;
                 if (errResponse == undefined && error.isAxiosError) {
                     res = Response.fail().setStatus(404).setMessage("请求服务无响应");
-                    if (HttpRequest.errorCallback) {
-                        HttpRequest.errorCallback(res)
+                    if (FeignConfig.errorCallback) {
+                        FeignConfig.errorCallback(res.getMessage())
                     }
                     return res;
                 }
@@ -212,8 +168,8 @@ export class HttpRequest {
                         message = errData.error;
                     }
                     res = Response.fail().setStatus(errData.status).setMessage(message).setCode(errData.code);
-                    if (HttpRequest.errorCallback) {
-                        HttpRequest.errorCallback(res)
+                    if (FeignConfig.errorCallback) {
+                        FeignConfig.errorCallback(res.getMessage())
                     }
                     return res;
                 }
@@ -228,8 +184,8 @@ export class HttpRequest {
                 const resText = errResponse.statusText;
                 error = HttpRequest.httStatusConvert(error, httpStatus, resText);
                 res = Response.fail().setMessage(error.message).setStatus(httpStatus);
-                if (HttpRequest.errorCallback) {
-                    HttpRequest.errorCallback(res)
+                if (FeignConfig.errorCallback) {
+                    FeignConfig.errorCallback(res.getMessage())
                 }
                 return res;
             }
@@ -244,9 +200,9 @@ export class HttpRequest {
         if (HttpRequest.AXIOS_INSTANCE == undefined || HttpRequest.AXIOS_INSTANCE == null) {
             HttpRequest.AXIOS_INSTANCE = axios.create({
                 //  baseURL: process.env.VUE_APP_API,
-                baseURL: HttpRequest.BASE_URL,
+                baseURL: FeignConfig.BASE_URL,
                 // 请求超时时间
-                timeout: 30000
+                timeout: FeignConfig.REQUEST_TIMEOUT
             });
             HttpRequest.initGlobalRequestInterceptor(HttpRequest.AXIOS_INSTANCE);
             HttpRequest.initGlobalResponseInterceptor(HttpRequest.AXIOS_INSTANCE);

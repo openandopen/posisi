@@ -2244,7 +2244,7 @@
 
 "@zuiwoxing/posisi@file:E:\\work\\study\\my-open-source\\typescript\\posisi\\packages\\core":
   "resolved" "file:packages/core"
-  "version" "0.0.27"
+  "version" "0.0.29"
   dependencies:
     "@babel/core" "^7.18.6"
     "@babel/plugin-external-helpers" "^7.18.6"

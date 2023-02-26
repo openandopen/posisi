@@ -5,6 +5,7 @@
  **/
 import {BizCode, HttpStatus} from "../enums";
 import {CommonUtil} from "../../common";
+import {FeignConfig} from "../../config/Configs";
 
 
 export class Response<T> {
@@ -21,27 +22,17 @@ export class Response<T> {
 
     public static COMMON_SUCCESS_TIP = "操作成功"
 
-    private static errorCallback?: Function;
-
-    private static successCallback?: Function;
 
     /**
-     * 用户设置通用错误回调-处理
-     * @param errorCallback
+     *仅HTTP状态成功
      */
-    public static setErrorCallback(errorCallback: Function) {
-        Response.errorCallback = errorCallback;
+    public isStatusSuccess(): boolean {
+        return this.status === 200;
     }
 
     /**
-     * 用户设置通用成功回调-处理
-     * @param successCallback
+     * http状态与业务状态都成功
      */
-    public static setSuccessCallback(successCallback: Function) {
-        Response.successCallback = successCallback;
-    }
-
-
     public isSuccess(): boolean {
         return this.status === 200 && this.code === BizCode.SUCCESS;
     }
@@ -53,7 +44,7 @@ export class Response<T> {
      */
     public success(callback: Function): this {
         if (this.isSuccess() && callback) {
-            callback(this.getResult())
+            callback(this.getData())
         }
         return this;
     }
@@ -73,12 +64,12 @@ export class Response<T> {
         if (this.isSuccess()) {
             if (success != null && success != undefined) {
                // console.log(success[0])
-                if (Response.successCallback) {
-                    Response.successCallback(success)
+                if (FeignConfig.successCallback) {
+                    FeignConfig.successCallback(success)
                 }
             } else {
-                if (Response.successCallback) {
-                    Response.successCallback(Response.COMMON_SUCCESS_TIP)
+                if (FeignConfig.successCallback) {
+                    FeignConfig.successCallback(Response.COMMON_SUCCESS_TIP)
                 }
             }
         }
@@ -92,12 +83,12 @@ export class Response<T> {
     public errorTip(...errors: any): this {
         if (!this.isSuccess()) {
             if (errors != null && errors != undefined && errors.length > 0) {
-                if (Response.errorCallback) {
-                    Response.errorCallback(errors[0])
+                if (FeignConfig.errorCallback) {
+                    FeignConfig.errorCallback(errors[0])
                 }
             } else {
-                if (Response.errorCallback) {
-                    Response.errorCallback(this.getMessage())
+                if (FeignConfig.errorCallback) {
+                    FeignConfig.errorCallback(this.getMessage())
                 }
             }
         }
@@ -124,7 +115,7 @@ export class Response<T> {
         return this;
     }
 
-    public getResult(): T {
+    public getData(): T {
         return this.data || (new Object() as T);
     }
 

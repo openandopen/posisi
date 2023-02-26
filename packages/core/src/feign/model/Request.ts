@@ -4,7 +4,7 @@
  *@date 2020-03-20 21:28
  **/
 export   class Request<T> {
-    //请求body对象
+    //请求data对象
     data?: T;
     //分页-开始下标记录索引(从0开始)
     start: number = 0;
