@@ -61,7 +61,8 @@ export   class UserInfo {
      **/
 
     openId?: string;
-
+    //平台
+    platform?:number;
 
     /**
      * 租户ID

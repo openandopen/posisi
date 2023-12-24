@@ -5,9 +5,31 @@
  **/
 import {DateUtil} from "./DateUtil";
 import {EnumUtil} from "./EnumUtil";
+import {SnowflakeIdv1} from 'simple-flakeid'
 
+const snowflake = new SnowflakeIdv1({workerId: 1, seqBitLength: 16})
 
 export class CommonUtil {
+
+    /**
+     * 雪花算法ID (18位)
+     */
+    public static genSnowflake(): number | bigint {
+        return snowflake.NextId()
+    }
+
+    /**
+     * 随机数生成
+     * @param min 最小值
+     * @param max 最大值
+     */
+    public static genRandom(min: number, max: number): number {
+        let range = max - min;
+        let rand = Math.random();
+        let res = (min + Math.round(rand * range));
+        return res;
+    }
+
     /**
      * 产生UID
      * @param len 长度
@@ -144,6 +166,7 @@ export class CommonUtil {
     public static isRegExp(object: any): boolean {
         return Object.prototype.toString.apply(object) == '[object RegExp]';
     }
+
     public static isMap(object: any): boolean {
         return Object.prototype.toString.apply(object) == '[object Map]';
     }
@@ -151,6 +174,7 @@ export class CommonUtil {
     public static isSet(object: any): boolean {
         return Object.prototype.toString.apply(object) == '[object Set]';
     }
+
     /**
      * 对象copy
      * @param target 目标对象
@@ -215,10 +239,16 @@ export class CommonUtil {
 
     /**
      * 时间格式化
-     * @param time
-     * @param fmt
+     * @param time 后台时间长整型/date
+     * @param fmt 时间格式 yyyy-MM-dd hh:mm:ss
      */
-    public static dateFormat(time: Date | number, fmt ?: string) {
+    public static dateFormat(time: Date | number | string, fmt ?: string) {
+        if (time == '' || time == undefined || time == null || time == 'null' || time == 'NULL') {
+            return "";
+        }
+        if (typeof time == 'string') {
+            time = parseInt(time);
+        }
         return DateUtil.dateFormat(time, fmt);
     }
 
@@ -399,15 +429,13 @@ export class CommonUtil {
         }
         return ary
     }
+
     /**
      * 将时间秒转为HH:MM:SS
      * @param second 时间秒
      */
-    public static formatSecondToHms(seconds:number):string {
+    public static formatSecondToHms(seconds: number): string {
         return DateUtil.formatSecondToHms(seconds);
     }
 }
-
-
-
-
+ 

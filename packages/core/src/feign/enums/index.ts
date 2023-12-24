@@ -5,7 +5,7 @@
  *@date 2020-02-04 11:46
  **/
 export enum BizCode {
-    SUCCESS = 200,
+    SUCCESS = 0,
     AUTH_FAIL = 1,
     FAIL = -1
 }

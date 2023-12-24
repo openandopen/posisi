@@ -8,7 +8,7 @@ import {CommonUtil} from "./CommonUtil";
 /**
  * 本地存储工具
  */
-export   class StorageUtil {
+export class StorageUtil {
 
     /**
      * session存储
@@ -33,10 +33,14 @@ export   class StorageUtil {
             if (value.startsWith("{")) {
                 return JSON.parse(value);
             }
-            return value;
         } catch (e) {
-            return value;
+            value = "";
+            console.error(e);
         }
+        if (value == undefined || value == 'undefined' || value == 'null' || value == null) {
+            value = "";
+        }
+        return value;
     }
 
     public static removeSessionStorage(key: string): void {
@@ -55,9 +59,9 @@ export   class StorageUtil {
     public static setLocalStorage(key: string, value: any): void {
 
         if (CommonUtil.isObject(value)) {
-             localStorage.setItem(key, JSON.stringify(value))
+            localStorage.setItem(key, JSON.stringify(value))
         } else {
-             localStorage.setItem(key, value)
+            localStorage.setItem(key, value)
         }
     }
 
@@ -71,10 +75,15 @@ export   class StorageUtil {
             if (value.startsWith("{")) {
                 return JSON.parse(value);
             }
-            return value;
+
         } catch (e) {
-            return value;
+           value = "";
+           console.error(e)
         }
+        if (value == undefined || value == 'undefined' || value == 'null' || value == null) {
+            value = "";
+        }
+        return value;
     }
 
     public static removeLocalStorage(key: string): void {

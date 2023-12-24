@@ -76,6 +76,7 @@ export function RequestMapping(methodMeta: MethodMeta) {
             }
 
              let promise = HttpRequest.request(reqInfo, {}, function (finished: any) {
+
             })
             return promise;
         }

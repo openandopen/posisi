@@ -4,8 +4,7 @@ import {BizCode, RequestMethod} from "../enums";
 import {ReqInfo} from "../model/Meta";
 import {Response} from "../model/Response"
 import {AccountContext} from "../../common/account/AccountContext";
-import {FeignConfig} from "../../config/Configs";
-
+import {posisiConfig} from "../../config/Configs";
 
 
 //URL模板
@@ -18,7 +17,7 @@ const PATTERN = /\{(\w*[:]*[=]*\w+)\}(?!})/g
  * @returns {boolean}
  */
 export function isMatchExclude(url: string): boolean {
-    let value = FeignConfig.EXCLUDE_URLS.find(value => {
+    let value = posisiConfig.EXCLUDE_URLS.find((value:any) => {
         return url.search(value) > 0;
     })
     if (value != null && value != undefined) {
@@ -28,7 +27,6 @@ export function isMatchExclude(url: string): boolean {
 }
 
 
-
 /**
  * @desc 所有后台API配置
  * @author liudejian
@@ -36,16 +34,11 @@ export function isMatchExclude(url: string): boolean {
  */
 export class HttpRequest {
 
-
-
     public static AXIOS_INSTANCE: AxiosInstance;
 
     constructor(baseUrl: string) {
-        FeignConfig.setBaseUrl(baseUrl);
+        posisiConfig.setBaseUrl(baseUrl);
     }
-
-
-
 
 
     /**
@@ -60,44 +53,39 @@ export class HttpRequest {
                 let token = AccountContext.getToken();
                 let url = config.url || "";
                 if ((token == null || token == undefined) && !isMatchExclude(url)) {
-                    if (FeignConfig.gotoLoginCallback) {
-                        FeignConfig.gotoLoginCallback(url)
+                    if (posisiConfig.gotoLoginCallback) {
+                        posisiConfig.gotoLoginCallback(url)
                     }
                 }
                 // 请求头信息
-                for (let key in FeignConfig.COMMON_HEADERS) {
-                    config.headers[key] = FeignConfig.COMMON_HEADERS[key];
+                for (let key in posisiConfig.COMMON_HEADERS) {
+                    config.headers[key] = posisiConfig.COMMON_HEADERS[key];
                 }
                 config.headers["X-Custom-Header-REQTIME"] = new Date().getTime();
                 config.headers["Authorization"] = 'Bearer ' + token;
 
-                if (FeignConfig.LOADING && FeignConfig.loadingStartCallback) {
-                    FeignConfig.loadingStartCallback();
-                    /*  loading = ElLoading.service({
-                          lock: true,
-                          text: '正在请求数据',
-                          background: 'rgba(237,234,234,0.5)',
-                          spinner: 'el-icon-loading'
-                      })*/
+                if (posisiConfig.loading && posisiConfig.loadingStartCallback) {
+                    posisiConfig.loadingStartCallback();
+
                 }
 
 
-                if (FeignConfig.IS_DEBUG) {
+                if (posisiConfig.isDebug) {
                     console.log("request-config:", config)
                 }
                 return config
             },
             //【2】请求异常
             (error: any) => {
-                if (FeignConfig.IS_DEBUG) {
+                if (posisiConfig.isDebug) {
                     console.log("request-error:", error)
                 }
-                if (FeignConfig.LOADING && FeignConfig.loadingEndCallback) {
-                    FeignConfig.loadingEndCallback();
+                if (posisiConfig.loading && posisiConfig.loadingEndCallback) {
+                    posisiConfig.loadingEndCallback();
                 }
                 let res = Response.fail().setStatus(0).setMessage("请求异常:" + error).setCode(BizCode.FAIL);
-                if (FeignConfig.errorCallback) {
-                    FeignConfig.errorCallback(res.getMessage())
+                if (posisiConfig.errorCallback) {
+                    posisiConfig.errorCallback(res.getMessage())
                 }
                 return Promise.reject(error)
             }
@@ -113,11 +101,11 @@ export class HttpRequest {
         currentInstance.interceptors.response.use(
             //【1】响应对象
             (response: any) => {
-                    if (FeignConfig.LOADING && FeignConfig.loadingEndCallback) {
-                        FeignConfig.loadingEndCallback();
-                    }
+                if (posisiConfig.loading && posisiConfig.loadingEndCallback) {
+                    posisiConfig.loadingEndCallback();
+                }
 
-                if (FeignConfig.IS_DEBUG) {
+                if (posisiConfig.isDebug) {
                     console.log("response-data:", response)
                 }
                 // http状态
@@ -141,10 +129,10 @@ export class HttpRequest {
             },
             //【2】 响应异常
             (error: any) => {
-                /*    if (loading && this.ENABLE_LOADING) {
-                        loading.close()
-                    }*/
-                if (FeignConfig.IS_DEBUG) {
+                if (posisiConfig.loading && posisiConfig.loadingEndCallback) {
+                    posisiConfig.loadingEndCallback();
+                }
+                if (posisiConfig.isDebug) {
                     console.log("response-error:", error)
                 }
                 let res: Response<any> = {} as any;
@@ -153,8 +141,8 @@ export class HttpRequest {
                 let errResponse = error.response;
                 if (errResponse == undefined && error.isAxiosError) {
                     res = Response.fail().setStatus(404).setMessage("请求服务无响应");
-                    if (FeignConfig.errorCallback) {
-                        FeignConfig.errorCallback(res.getMessage())
+                    if (posisiConfig.errorCallback) {
+                        posisiConfig.errorCallback(res.getMessage())
                     }
                     return res;
                 }
@@ -168,8 +156,8 @@ export class HttpRequest {
                         message = errData.error;
                     }
                     res = Response.fail().setStatus(errData.status).setMessage(message).setCode(errData.code);
-                    if (FeignConfig.errorCallback) {
-                        FeignConfig.errorCallback(res.getMessage())
+                    if (posisiConfig.errorCallback) {
+                        posisiConfig.errorCallback(res.getMessage())
                     }
                     return res;
                 }
@@ -184,8 +172,8 @@ export class HttpRequest {
                 const resText = errResponse.statusText;
                 error = HttpRequest.httStatusConvert(error, httpStatus, resText);
                 res = Response.fail().setMessage(error.message).setStatus(httpStatus);
-                if (FeignConfig.errorCallback) {
-                    FeignConfig.errorCallback(res.getMessage())
+                if (posisiConfig.errorCallback) {
+                    posisiConfig.errorCallback(res.getMessage())
                 }
                 return res;
             }
@@ -200,9 +188,9 @@ export class HttpRequest {
         if (HttpRequest.AXIOS_INSTANCE == undefined || HttpRequest.AXIOS_INSTANCE == null) {
             HttpRequest.AXIOS_INSTANCE = axios.create({
                 //  baseURL: process.env.VUE_APP_API,
-                baseURL: FeignConfig.BASE_URL,
+                baseURL: posisiConfig.baseUrl,
                 // 请求超时时间
-                timeout: FeignConfig.REQUEST_TIMEOUT
+                timeout: posisiConfig.REQUEST_TIMEOUT
             });
             HttpRequest.initGlobalRequestInterceptor(HttpRequest.AXIOS_INSTANCE);
             HttpRequest.initGlobalResponseInterceptor(HttpRequest.AXIOS_INSTANCE);
@@ -270,90 +258,96 @@ export class HttpRequest {
             }
         }
         reqUri = this.templateEngine(reqUri, paramRequest);
+
+        let feignDecode = posisiConfig.getFeignDecode();
+
         return new Promise((resolve, reject) => {
             const reqType = reqInfo.method;
             if (RequestMethod.POST === reqType) {
                 axiosIns.post(reqUri, bodyData, config).then(function (res: any) {
-                    resolve(HttpRequest.wrapOkResponse(res))
+                    // resolve(HttpRequest.wrapOkResponse(res))
+                    resolve(feignDecode.decode(res))
                 }).catch(function (error: any) {
-                    reject(HttpRequest.wrapErrorResponse(error))
+                    // reject(HttpRequest.wrapErrorResponse(error))
+                    resolve(feignDecode.error(error))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
-                        finishCallback(reqInfo);
+                        // finishCallback(reqInfo);
+                        feignDecode.finally(reqInfo);
                     }
                 })
             } else if (RequestMethod.PUT === reqType) {
                 axiosIns.put(reqUri, bodyData, config).then(function (res: any) {
-                    resolve(HttpRequest.wrapOkResponse(res))
+                    resolve(feignDecode.decode(res))
                 }).catch(function (error: any) {
-                    reject(HttpRequest.wrapErrorResponse(error))
+                    resolve(feignDecode.error(error))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
-                        finishCallback(reqInfo);
+                        feignDecode.finally(reqInfo);
                     }
                 })
             } else if (RequestMethod.PATCH === reqType) {
                 axiosIns.patch(reqUri, bodyData, config).then(function (res: any) {
-                    resolve(HttpRequest.wrapOkResponse(res))
+                    resolve(feignDecode.decode(res))
                 }).catch(function (error: any) {
-                    reject(HttpRequest.wrapErrorResponse(error))
+                    resolve(feignDecode.error(error))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
-                        finishCallback(reqInfo);
+                        feignDecode.finally(reqInfo);
                     }
                 })
             } else if (RequestMethod.GET === reqType) {
                 config = Object.assign({params: paramRequest}, config)
                 axiosIns.get(reqUri, config).then(function (res: any) {
-                    resolve(HttpRequest.wrapOkResponse(res))
+                    resolve(feignDecode.decode(res))
                 }).catch(function (error: any) {
-                    reject(HttpRequest.wrapErrorResponse(error))
+                    resolve(feignDecode.error(error))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
-                        finishCallback(reqInfo);
+                        feignDecode.finally(reqInfo);
                     }
                 })
             } else if (RequestMethod.DELETE === reqType) {
                 config = Object.assign({params: paramRequest}, config)
                 axiosIns.delete(reqUri, config)
                     .then(function (res: any) {
-                        resolve(HttpRequest.wrapOkResponse(res))
+                        resolve(feignDecode.decode(res))
                     }).catch(function (error: any) {
-                    reject(HttpRequest.wrapErrorResponse(error))
+                    resolve(feignDecode.error(error))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
-                        finishCallback(reqInfo);
+                        feignDecode.finally(reqInfo);
                     }
                 })
 
             } else if (RequestMethod.HEAD === reqType) {
                 config = Object.assign({params: paramRequest}, config)
                 axiosIns.head(reqUri, config).then(function (res: any) {
-                    resolve(HttpRequest.wrapOkResponse(res))
+                    resolve(feignDecode.decode(res))
                 }).catch(function (error: any) {
-                    reject(HttpRequest.wrapErrorResponse(error))
+                    resolve(feignDecode.error(error))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
-                        finishCallback(reqInfo);
+                        feignDecode.finally(reqInfo);
                     }
                 })
 
             } else if (RequestMethod.OPTIONS === reqType) {
                 config = Object.assign({params: paramRequest}, config)
                 axiosIns.options(reqUri, config).then(function (res: any) {
-                    resolve(HttpRequest.wrapOkResponse(res))
+                    resolve(feignDecode.decode(res))
                 }).catch(function (error: any) {
-                    reject(HttpRequest.wrapErrorResponse(error))
+                    resolve(feignDecode.error(error))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
-                        finishCallback(reqInfo);
+                        feignDecode.finally(reqInfo);
                     }
                 })
             }

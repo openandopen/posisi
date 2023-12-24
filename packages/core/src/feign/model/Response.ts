@@ -5,7 +5,7 @@
  **/
 import {BizCode, HttpStatus} from "../enums";
 import {CommonUtil} from "../../common";
-import {FeignConfig} from "../../config/Configs";
+import {posisiConfig} from "../../config/Configs";
 
 
 export class Response<T> {
@@ -23,20 +23,20 @@ export class Response<T> {
     public static COMMON_SUCCESS_TIP = "操作成功"
 
 
-    /**
-     *仅HTTP状态成功
-     */
-    public isStatusSuccess(): boolean {
-        return this.status === 200;
-    }
+
 
     /**
      * http状态与业务状态都成功
      */
-    public isSuccess(): boolean {
+    public isAllSuccess(): boolean {
         return this.status === 200 && this.code === BizCode.SUCCESS;
     }
-
+    /**
+     *仅HTTP状态成功
+     */
+    public isSuccess(): boolean {
+        return this.status === 200;
+    }
 
     /**
      *
@@ -64,12 +64,12 @@ export class Response<T> {
         if (this.isSuccess()) {
             if (success != null && success != undefined) {
                // console.log(success[0])
-                if (FeignConfig.successCallback) {
-                    FeignConfig.successCallback(success)
+                if (posisiConfig.successCallback) {
+                    posisiConfig.successCallback(success)
                 }
             } else {
-                if (FeignConfig.successCallback) {
-                    FeignConfig.successCallback(Response.COMMON_SUCCESS_TIP)
+                if (posisiConfig.successCallback) {
+                    posisiConfig.successCallback(Response.COMMON_SUCCESS_TIP)
                 }
             }
         }
@@ -83,12 +83,12 @@ export class Response<T> {
     public errorTip(...errors: any): this {
         if (!this.isSuccess()) {
             if (errors != null && errors != undefined && errors.length > 0) {
-                if (FeignConfig.errorCallback) {
-                    FeignConfig.errorCallback(errors[0])
+                if (posisiConfig.errorCallback) {
+                    posisiConfig.errorCallback(errors[0])
                 }
             } else {
-                if (FeignConfig.errorCallback) {
-                    FeignConfig.errorCallback(this.getMessage())
+                if (posisiConfig.errorCallback) {
+                    posisiConfig.errorCallback(this.getMessage())
                 }
             }
         }
@@ -116,6 +116,9 @@ export class Response<T> {
     }
 
     public getData(): T {
+        if (typeof this.data == 'number') {
+             return this.data
+        }
         return this.data || (new Object() as T);
     }
 
