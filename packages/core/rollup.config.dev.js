@@ -1,12 +1,12 @@
-import path from 'path'
 import ts from 'rollup-plugin-typescript2'
 import json from '@rollup/plugin-json'
 import resolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import {babel} from '@rollup/plugin-babel';
-//import pkg from './package.json' assert {type: "json"};
 import builtins from 'rollup-plugin-node-builtins';
 import globals from 'rollup-plugin-node-globals';
+import autoExternal from 'rollup-plugin-auto-external';
+import terser from '@rollup/plugin-terser';
 
 export default {
     input: 'src/index.ts',
@@ -14,14 +14,23 @@ export default {
         {
             file:   "dist/index.umd.js", //pkg.jsdelivr,
             format: 'umd',
+            es5: true,
             name: 'posisi',
-            sourcemap: true,
+            sourcemap: false,
+        },
+        {
+            file:   "dist/index.cjs.js", //pkg.jsdelivr,
+            format: 'cjs',
+            es5: false,
+            name: 'posisi',
+            sourcemap: false,
         },
         {
             file:  "dist/index.esm.js", //pkg.module,
-            format: 'es',
+            format: 'esm',
             sourcemap: true,
-        },
+         },
+
     ],
     plugins: [
         resolve(),
@@ -29,6 +38,8 @@ export default {
         json(),
         globals(),
         builtins(),
+        terser(),
+        autoExternal(),
         babel({
             presets: ["@babel/preset-env"],
             exclude: "node_modules/**"

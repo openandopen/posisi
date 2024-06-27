@@ -17,6 +17,14 @@ export class ClassUtil {
     }
 
     /**
+     * 判断一个对象是class 还是 class实例
+     * @param obj
+     */
+    public static isClass(obj: any): boolean {
+        return Object.getOwnPropertyNames(obj).includes('prototype')
+    }
+
+    /**
      * 获取对象声明字段
      * @param cls
      */

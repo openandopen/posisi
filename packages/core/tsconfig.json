@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "/@/*": ["src/*"]
     },
     "pretty": true,
     "target": "es2015",

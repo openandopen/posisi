@@ -6,7 +6,7 @@
 import 'reflect-metadata';
 import {AutowireMeta, BeanDefinition, PropertyInfo, Scope, ServiceMeta} from "../model/Meta";
 import {IocUtil} from "../util/IocUtil";
-import {IocContext} from "../";
+import {IocContext} from '../common/IocContext';
 
 export const CLASS_META_KEY = Symbol("class_meta_key");
 export const CLASS_PROP_KEY = Symbol("class_prop_key");

@@ -15,6 +15,10 @@ export   class UserInfo {
      */
     uid:string = "";
     /**
+     * 全局唯一ID
+     */
+    guid:string = ''
+    /**
      * 邮箱
      */
 

@@ -1,4 +1,5 @@
-import {ReqInfo} from "@/feign/model/Meta";
+import {ReqInfo} from "../../feign/model/Meta";
+import {FeignInterceptor} from "./FeignInterceptor";
 
 /**
  *@desc 解码器
@@ -6,6 +7,9 @@ import {ReqInfo} from "@/feign/model/Meta";
  *@date 2023-12-24 10:22
  **/
 export interface FeignDecode {
+
+
+
     /**
      * 对象反序列化
      * @param data
@@ -28,8 +32,8 @@ export interface FeignDecode {
  * 判断是否是 FeignDecode 实例
  * @param object
  */
-const instanceOfFeignDecode = (object: any):object is FeignDecode => {
-    return ('decode' in object && 'error' in  object && 'finally' in  object);
+const instanceOfFeignDecode = (object: any): object is FeignDecode => {
+    return ('decode' in object && 'error' in object && 'finally' in object);
 }
 
 

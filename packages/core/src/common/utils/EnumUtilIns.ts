@@ -1,5 +1,5 @@
-import {DictDto} from "@/model/DictDto";
-import {EnumUtil} from "@/common";
+import {DictDto} from "../../model/DictDto";
+import {EnumUtil} from "../../common";
 
 /**
  *@desc

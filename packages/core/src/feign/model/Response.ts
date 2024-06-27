@@ -19,12 +19,19 @@ export class Response<T> {
     code: number = BizCode.SUCCESS;
     //响应参数(扩展参数)
     params?: Map<string, object>;
+    //停止异常传递
+    stopErrorTransfer:boolean = false;
 
     public static COMMON_SUCCESS_TIP = "操作成功"
 
+    public setStopErrorTransfer(stopErrorTransfer:boolean):Response<T> {
+        this.stopErrorTransfer = stopErrorTransfer;
+        return this;
+    }
 
-
-
+    public getStopErrorTransfer() {
+        return this.stopErrorTransfer == undefined ?  false : this.stopErrorTransfer;
+    }
     /**
      * http状态与业务状态都成功
      */
@@ -42,17 +49,18 @@ export class Response<T> {
      *
      * @param callback 回调返回正常结果
      */
-    public success(callback: Function): this {
+    public success(callback: Function):  Response<T> {
         if (this.isSuccess() && callback) {
-            callback(this.getData())
+            callback(this.getData(),this.getParams(),this.status,this.code);
         }
         return this;
     }
 
-    public error(callback: Function): this {
-        if (!this.isSuccess() && callback) {
-            callback(this.getMessage())
+    public error(callback: Function):Response<T> {
+        if (!this.isSuccess() && callback && !this.getStopErrorTransfer()) {
+            callback(this.getMessage(),this.getParams(),this.status,this.code);
         }
+
         return this;
     }
 
@@ -60,18 +68,21 @@ export class Response<T> {
      * 成功提示
      * @param success
      */
-    public successTip(...success: any): this {
+    public successTip(...success: any):Response<T>{
         if (this.isSuccess()) {
-            if (success != null && success != undefined) {
-               // console.log(success[0])
+
+
+           /* if (success != null && success != undefined) {
                 if (posisiConfig.successCallback) {
-                    posisiConfig.successCallback(success)
+                    this.setMessage(success.json(","))
+                    posisiConfig.successCallback(this)
                 }
             } else {
                 if (posisiConfig.successCallback) {
-                    posisiConfig.successCallback(Response.COMMON_SUCCESS_TIP)
+                    this.setMessage(Response.COMMON_SUCCESS_TIP)
+                    posisiConfig.successCallback(this)
                 }
-            }
+            }*/
         }
         return this;
     }
@@ -80,17 +91,18 @@ export class Response<T> {
      * 错误提示
      * @param errors
      */
-    public errorTip(...errors: any): this {
-        if (!this.isSuccess()) {
-            if (errors != null && errors != undefined && errors.length > 0) {
+    public errorTip(...errors: any):Response<T> {
+        if (!this.isSuccess() && !this.getStopErrorTransfer()) {
+            this.setMessage(errors.json(","))
+          /*  if (errors != null && errors != undefined && errors.length > 0) {
                 if (posisiConfig.errorCallback) {
-                    posisiConfig.errorCallback(errors[0])
+                    posisiConfig.errorCallback(this)
                 }
             } else {
                 if (posisiConfig.errorCallback) {
-                    posisiConfig.errorCallback(this.getMessage())
+                    posisiConfig.errorCallback(this)
                 }
-            }
+            }*/
         }
         return this;
     }
@@ -132,7 +144,9 @@ export class Response<T> {
     }
 
 
-    public addAllParams(map: any): this {
+
+
+    public addAllParams(map: any):Response<T> {
         if (!CommonUtil.isEmptyObject(map)) {
             let mp = map as Map<any, any>;
             if (CommonUtil.isMap(mp)) {
@@ -163,7 +177,7 @@ export class Response<T> {
         return this;
     }
 
-    public addParam(key: string, value: object): this {
+    public addParam(key: string, value: object):Response<T>{
         if (this.params == undefined || this.params == null) {
             this.params = new Map<string, object>();
         }
@@ -171,7 +185,7 @@ export class Response<T> {
         return this;
     }
 
-    public removeParam(key: string): this {
+    public removeParam(key: string):Response<T> {
         if (this.params == undefined || this.params == null) {
             return this;
         }

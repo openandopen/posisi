@@ -1,4 +1,4 @@
-import {CommonUtil} from "@/common";
+import {CommonUtil} from "../../common";
 
 /**
  *@desc 零宽字符处理

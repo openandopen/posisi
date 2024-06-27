@@ -9,18 +9,20 @@ import {ParamType} from "../../feign/enums";
 import {HttpRequest} from "../../feign/utils/HttpRequest";
 import {ClassMeta, MethodMeta, ReqInfo} from "../../feign/model/Meta";
 import {ConfigUtil} from "../../config/ConfigUtil";
+import {posisiConfig} from "/@/config/Configs";
 
 
 const classPropKey = Symbol("classPropKey");
 const classMetaKey = Symbol("classMetaKey");
 const PATTERN = /\{(.*)\}/g
 
-export  function urlReplaceEngine(template: string, json: any) {
+export function urlReplaceEngine(template: string, json: any) {
     return template.replace(PATTERN, function (match, key, value) {
-      //  console.log("match-key===",key)
+        //  console.log("match-key===",key)
         return json[key]
     })
 }
+
 /**
  *@desc 客户端
  *@author liudejian
@@ -45,8 +47,8 @@ export function RequestMapping(methodMeta: MethodMeta) {
             // console.log("RequestMapping========",method)
             //获取定义的类信息
             let classMeta: ClassMeta = Reflect.getOwnMetadata(classMetaKey, target, classPropKey);
-            let urlResult = urlReplaceEngine(classMeta.serverUrl,ConfigUtil.getConfigMapToObject());
-             let finalServerUrl = urlResult;
+            let urlResult = urlReplaceEngine(classMeta.serverUrl, ConfigUtil.getConfigMapToObject());
+            let finalServerUrl = urlResult;
             let serverUrl = UrlUtil.urlJoin(finalServerUrl, classMeta.uri || "");
             let finalUrl = UrlUtil.urlJoin(serverUrl, methodMeta.uri);
 
@@ -60,7 +62,7 @@ export function RequestMapping(methodMeta: MethodMeta) {
                     // @ts-ignore
                     let paramValue = arguments[pIndex];
                     if (param.require && (paramValue == null || paramValue == undefined || paramValue === "")) {
-                        console.error(params,pIndex,arguments,paramValue)
+                        console.error(params, pIndex, arguments, paramValue)
                         throw new Error(param.name + " 为必填项!");
                     }
                     if (param.type == ParamType.HEADER) {
@@ -75,7 +77,7 @@ export function RequestMapping(methodMeta: MethodMeta) {
                 }
             }
 
-             let promise = HttpRequest.request(reqInfo, {}, function (finished: any) {
+            let promise = HttpRequest.request(reqInfo, {timeout: posisiConfig.REQUEST_TIMEOUT}, function (finished: any) {
 
             })
             return promise;

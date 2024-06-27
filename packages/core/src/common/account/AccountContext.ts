@@ -54,15 +54,6 @@ export   class AccountContext {
         return StorageUtil.getSessionStorage(AccountContext.TOKEN);
     }
 
-/*    public static getUserOwnRouter() :Array<RouteRecordRaw> {
-        let routeStr = StorageUtil.getSessionStorage(AccountContext.ROUTER);
-        return JSON.parse(routeStr);
-    }
-
-    public static setUserOwnRouter(routers:Array<RouteRecordRaw>) {
-        StorageUtil.setSessionStorage(AccountContext.ROUTER,JSON.stringify(routers))
-    }*/
-
     /**
      * 获取token
      */

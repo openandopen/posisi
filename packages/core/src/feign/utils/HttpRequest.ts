@@ -5,6 +5,8 @@ import {ReqInfo} from "../model/Meta";
 import {Response} from "../model/Response"
 import {AccountContext} from "../../common/account/AccountContext";
 import {posisiConfig} from "../../config/Configs";
+import {FeignDecode} from "../decode/FeignDecode";
+import {FeignInterceptor} from "/@/feign/decode/FeignInterceptor";
 
 
 //URL模板
@@ -17,7 +19,7 @@ const PATTERN = /\{(\w*[:]*[=]*\w+)\}(?!})/g
  * @returns {boolean}
  */
 export function isMatchExclude(url: string): boolean {
-    let value = posisiConfig.EXCLUDE_URLS.find((value:any) => {
+    let value = posisiConfig.EXCLUDE_URLS.find((value: any) => {
         return url.search(value) > 0;
     })
     if (value != null && value != undefined) {
@@ -68,8 +70,6 @@ export class HttpRequest {
                     posisiConfig.loadingStartCallback();
 
                 }
-
-
                 if (posisiConfig.isDebug) {
                     console.log("request-config:", config)
                 }
@@ -84,8 +84,8 @@ export class HttpRequest {
                     posisiConfig.loadingEndCallback();
                 }
                 let res = Response.fail().setStatus(0).setMessage("请求异常:" + error).setCode(BizCode.FAIL);
-                if (posisiConfig.errorCallback) {
-                    posisiConfig.errorCallback(res.getMessage())
+                if (!posisiConfig.ignoreGlobalError) {
+                    posisiConfig.getUserInterceptor().requestErrorProcess(res);
                 }
                 return Promise.reject(error)
             }
@@ -116,15 +116,29 @@ export class HttpRequest {
                 const resultData = response.data;
                 //响应头信息
                 const headers = response.headers;
-
-                //  console.log("=====111====", httpStatus, resText, resultData, headers)
+                if (headers) {
+                    //如果响应信息中包含TOKEN，将就信息存储到本地
+                    let authToken = headers["authorization"];
+                    if (!authToken) {
+                        authToken = headers["Authorization"];
+                    }
+                    if (authToken) {
+                        authToken = authToken.replace(/Bearer/gi, '');
+                        AccountContext.setToken(authToken)
+                    }
+                }
+               // console.log("=====response====", httpStatus, resText, resultData, headers)
                 if (200 === httpStatus) {
                     return resultData;
                 } else {
-                    let error = new Error();
+                    let error = new Object() as any;
                     error = HttpRequest.httStatusConvert(error, httpStatus, resText);
-                    console.log("error========", error)
-                    return Response.fail().setMessage(error.message).setStatus(httpStatus);
+                   // console.log("error========", error)
+                    let resError = Response.fail().setMessage(error.message).setStatus(httpStatus);
+                    /*  if (!posisiConfig.ignoreGlobalError) {
+                          posisiConfig.getFeignDecode().getFeignInterceptor().responseErrorProcess(resError);
+                      }*/
+                    return resError;
                 }
             },
             //【2】 响应异常
@@ -138,17 +152,17 @@ export class HttpRequest {
                 let res: Response<any> = {} as any;
                 // console.error("error=", error)
                 //错误响应对象
+                let errCode = error.code;
                 let errResponse = error.response;
                 if (errResponse == undefined && error.isAxiosError) {
                     res = Response.fail().setStatus(404).setMessage("请求服务无响应");
-                    if (posisiConfig.errorCallback) {
-                        posisiConfig.errorCallback(res.getMessage())
-                    }
+                    /*  if (!posisiConfig.ignoreGlobalError) {
+                          posisiConfig.getFeignDecode().getFeignInterceptor().responseErrorProcess(res);
+                      }*/
                     return res;
                 }
                 //响应的业务异常数据
                 let errData = errResponse.data;
-
                 if (errData) {
                     //console.log("errData============",errData)
                     let message = errData.message;
@@ -156,9 +170,9 @@ export class HttpRequest {
                         message = errData.error;
                     }
                     res = Response.fail().setStatus(errData.status).setMessage(message).setCode(errData.code);
-                    if (posisiConfig.errorCallback) {
-                        posisiConfig.errorCallback(res.getMessage())
-                    }
+                    /*if (!posisiConfig.ignoreGlobalError) {
+                        posisiConfig.getFeignDecode().getFeignInterceptor().responseErrorProcess(res);
+                    }*/
                     return res;
                 }
 
@@ -172,14 +186,27 @@ export class HttpRequest {
                 const resText = errResponse.statusText;
                 error = HttpRequest.httStatusConvert(error, httpStatus, resText);
                 res = Response.fail().setMessage(error.message).setStatus(httpStatus);
-                if (posisiConfig.errorCallback) {
-                    posisiConfig.errorCallback(res.getMessage())
+                if (errCode =="ERR_BAD_RESPONSE") {
+                   // res.setMessage("请求资源["+errConfig.url+"]不可用,请与管理员联系!")
+                    res.setMessage("服务不可用,请与管理员联系!")
                 }
+                /*      if (!posisiConfig.ignoreGlobalError) {
+                          posisiConfig.getFeignDecode().getFeignInterceptor().responseErrorProcess(res);
+                      }*/
                 return res;
             }
         )
     }
 
+    /**
+     * 设置用户自定义axios实例
+     * @param axiosIns
+     */
+    public static setAxiosInstance(axiosIns: AxiosInstance) {
+        HttpRequest.AXIOS_INSTANCE = axiosIns;
+        HttpRequest.initGlobalRequestInterceptor(HttpRequest.AXIOS_INSTANCE);
+        HttpRequest.initGlobalResponseInterceptor(HttpRequest.AXIOS_INSTANCE);
+    }
 
     /**
      * 获取axios实例
@@ -192,6 +219,7 @@ export class HttpRequest {
                 // 请求超时时间
                 timeout: posisiConfig.REQUEST_TIMEOUT
             });
+
             HttpRequest.initGlobalRequestInterceptor(HttpRequest.AXIOS_INSTANCE);
             HttpRequest.initGlobalResponseInterceptor(HttpRequest.AXIOS_INSTANCE);
         }
@@ -229,6 +257,11 @@ export class HttpRequest {
      */
     public static request(reqInfo: ReqInfo, config: AxiosRequestConfig, finishCallback: any): Promise<any> {
         config = config || {};
+        let feignDecode: FeignDecode = posisiConfig.getFeignDecode();
+        let feignInterceptor: FeignInterceptor = posisiConfig.getUserInterceptor();
+        if (feignInterceptor) {
+            reqInfo = feignInterceptor.requestPreProcess(reqInfo);
+        }
         let axiosIns = HttpRequest.getAxiosInstance();
         let paramData = reqInfo.paramData;
         let bodyData = reqInfo.bodyData;
@@ -259,96 +292,99 @@ export class HttpRequest {
         }
         reqUri = this.templateEngine(reqUri, paramRequest);
 
-        let feignDecode = posisiConfig.getFeignDecode();
 
         return new Promise((resolve, reject) => {
             const reqType = reqInfo.method;
             if (RequestMethod.POST === reqType) {
                 axiosIns.post(reqUri, bodyData, config).then(function (res: any) {
-                    // resolve(HttpRequest.wrapOkResponse(res))
-                    resolve(feignDecode.decode(res))
+                    resolve(feignInterceptor.responseSuccessProcess(feignDecode.decode(res)))
                 }).catch(function (error: any) {
-                    // reject(HttpRequest.wrapErrorResponse(error))
-                    resolve(feignDecode.error(error))
+                    resolve(feignInterceptor.responseErrorProcess(feignDecode.error(error)))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
-                        // finishCallback(reqInfo);
                         feignDecode.finally(reqInfo);
                     }
+                    feignInterceptor.finallyProcess(reqInfo);
                 })
             } else if (RequestMethod.PUT === reqType) {
                 axiosIns.put(reqUri, bodyData, config).then(function (res: any) {
-                    resolve(feignDecode.decode(res))
+                    resolve(feignInterceptor.responseSuccessProcess(feignDecode.decode(res)))
                 }).catch(function (error: any) {
-                    resolve(feignDecode.error(error))
+                    resolve(feignInterceptor.responseErrorProcess(feignDecode.error(error)))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
                         feignDecode.finally(reqInfo);
                     }
+                    feignInterceptor.finallyProcess(reqInfo);
                 })
             } else if (RequestMethod.PATCH === reqType) {
                 axiosIns.patch(reqUri, bodyData, config).then(function (res: any) {
-                    resolve(feignDecode.decode(res))
+                    resolve(feignInterceptor.responseSuccessProcess(feignDecode.decode(res)))
                 }).catch(function (error: any) {
-                    resolve(feignDecode.error(error))
+                    resolve(feignInterceptor.responseErrorProcess(feignDecode.error(error)))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
                         feignDecode.finally(reqInfo);
                     }
+                    feignInterceptor.finallyProcess(reqInfo);
                 })
             } else if (RequestMethod.GET === reqType) {
                 config = Object.assign({params: paramRequest}, config)
                 axiosIns.get(reqUri, config).then(function (res: any) {
-                    resolve(feignDecode.decode(res))
+                    resolve(feignInterceptor.responseSuccessProcess(feignDecode.decode(res)))
                 }).catch(function (error: any) {
-                    resolve(feignDecode.error(error))
+                    resolve(feignInterceptor.responseErrorProcess(feignDecode.error(error)))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
                         feignDecode.finally(reqInfo);
                     }
+                    feignInterceptor.finallyProcess(reqInfo);
                 })
             } else if (RequestMethod.DELETE === reqType) {
                 config = Object.assign({params: paramRequest}, config)
                 axiosIns.delete(reqUri, config)
                     .then(function (res: any) {
-                        resolve(feignDecode.decode(res))
+                        resolve(feignInterceptor.responseSuccessProcess(feignDecode.decode(res)))
                     }).catch(function (error: any) {
-                    resolve(feignDecode.error(error))
+                    resolve(feignInterceptor.responseErrorProcess(feignDecode.error(error)))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
                         feignDecode.finally(reqInfo);
                     }
+                    feignInterceptor.finallyProcess(reqInfo);
                 })
 
             } else if (RequestMethod.HEAD === reqType) {
                 config = Object.assign({params: paramRequest}, config)
                 axiosIns.head(reqUri, config).then(function (res: any) {
-                    resolve(feignDecode.decode(res))
+                    resolve(feignInterceptor.responseSuccessProcess(feignDecode.decode(res)))
                 }).catch(function (error: any) {
-                    resolve(feignDecode.error(error))
+                    resolve(feignInterceptor.responseErrorProcess(feignDecode.error(error)))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
                         feignDecode.finally(reqInfo);
                     }
+                    feignInterceptor.finallyProcess(reqInfo);
                 })
 
             } else if (RequestMethod.OPTIONS === reqType) {
                 config = Object.assign({params: paramRequest}, config)
                 axiosIns.options(reqUri, config).then(function (res: any) {
-                    resolve(feignDecode.decode(res))
+                    resolve(feignInterceptor.responseSuccessProcess(feignDecode.decode(res)))
                 }).catch(function (error: any) {
-                    resolve(feignDecode.error(error))
+                    resolve(feignInterceptor.responseErrorProcess(feignDecode.error(error)))
                     // @ts-ignore
                 }).finally(function () {
                     if (finishCallback) {
                         feignDecode.finally(reqInfo);
                     }
+                    feignInterceptor.finallyProcess(reqInfo);
                 })
             }
             // @ts-ignore
@@ -356,26 +392,6 @@ export class HttpRequest {
         })
     }
 
-    /**
-     * 正常响应包装
-     * @param res
-     */
-    public static wrapOkResponse(res: Response<any>): Response<any> {
-        return Response.build(res.status, res.code)
-            .setData(res.data).addAllParams(res.params).setMessage(res.message);
-    }
-
-    /**
-     * 错误响应包装
-     * @param errorRes
-     */
-    public static wrapErrorResponse(errorRes: any): Response<any> {
-        if (errorRes instanceof Response) {
-            return errorRes;
-        } else {
-            return Response.fail().setMessage(errorRes)
-        }
-    }
 
     /**
      * http 状态异常转换

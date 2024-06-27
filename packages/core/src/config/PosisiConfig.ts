@@ -1,6 +1,8 @@
-import {FeignDecode, instanceOfFeignDecode} from "@/feign/decode/FeignDecode";
-import {DefaultFeignDecode} from "@/feign/decode/DefaultFeignDecode";
-import {ClassUtil} from "@/aop/ClassUtil";
+import {FeignDecode, instanceOfFeignDecode} from "../feign/decode/FeignDecode";
+import {DefaultFeignDecode} from "../feign/decode/DefaultFeignDecode";
+import {ClassUtil} from "../aop/ClassUtil";
+import {FeignInterceptor, instanceOfFeignInterceptor} from "../feign/decode/FeignInterceptor";
+import {DefaultFeignInterceptor} from "/@/feign/decode/DefaultFeignInterceptor";
 
 /**
  *@desc Posisi整体配置信息
@@ -12,13 +14,13 @@ export class PosisiConfig {
      * 异常回调
      * @private
      */
-    public errorCallback?: Function;
+    //  public errorCallback?: Function;
 
     /**
      * 成功回调
      * @private
      */
-    public successCallback?: Function;
+    //  public successCallback?: Function;
 
     /**
      * 开始加载-回调
@@ -35,14 +37,25 @@ export class PosisiConfig {
      */
     public gotoLoginCallback?: Function;
 
+
     /**
      * 用户自定义Decode
      * 实现 FeignDecode
      */
-    public userDecode?: any;
+    public userDecodeIns?: any;
+
+    /**
+     * 实例
+     */
+    public userInterceptorIns?: any;
 
     //基础URL(http://localhost:8080)
     public baseUrl?: string;
+
+    /**
+     * 忽略异常(如果设置为true,当有异常时全局将不提示)
+     */
+    public ignoreGlobalError: boolean = false;
 
     /**
      * 通用请求头
@@ -71,6 +84,14 @@ export class PosisiConfig {
 
     public isDebug: boolean = true;
 
+    /**
+     * 是否忽略全局异常处理
+     * @param isIgnoreError
+     */
+    public setIgnoreGlobalError(isIgnoreError: boolean): PosisiConfig {
+        this.ignoreGlobalError = isIgnoreError;
+        return this;
+    }
 
     /**
      * 启用DEBUG
@@ -93,24 +114,25 @@ export class PosisiConfig {
      * 用户设置通用错误回调-处理
      * @param errorCallback(message:any)
      */
-    public setErrorCallback(errorCallback: Function):PosisiConfig {
-        this.errorCallback = errorCallback;
-        return this;
-    }
+    /* public setErrorCallback(errorCallback: Function):PosisiConfig {
+         this.errorCallback = errorCallback;
+         return this;
+     }*/
 
     /**
      * 用户设置通用成功回调-处理
      * @param successCallback
      */
-    public setSuccessCallback(successCallback: Function):PosisiConfig {
-        this.successCallback = successCallback;
-        return this;
-    }
+
+    /* public setSuccessCallback(successCallback: Function):PosisiConfig {
+         this.successCallback = successCallback;
+         return this;
+     }*/
 
     /**
      * 启用loading
      */
-    public enableLoading():PosisiConfig {
+    public enableLoading(): PosisiConfig {
         this.loading = true;
         return this;
     }
@@ -118,16 +140,17 @@ export class PosisiConfig {
     /**
      * 关闭load
      */
-    public disableLoading():PosisiConfig {
+    public disableLoading(): PosisiConfig {
         this.loading = false;
         return this;
     }
+
 
     /**
      * 设置loadstart开始加载回调
      * @param loadingStartCallback
      */
-    public setLoadingStartCallback(loadingStartCallback?: Function):PosisiConfig {
+    public setLoadingStartCallback(loadingStartCallback?: Function): PosisiConfig {
         this.loadingStartCallback = loadingStartCallback;
         return this;
     }
@@ -136,7 +159,7 @@ export class PosisiConfig {
      * 结束loading 时候回调
      * @param loadingEndCallback
      */
-    public setLoadingEndCallback(loadingEndCallback?: Function):PosisiConfig {
+    public setLoadingEndCallback(loadingEndCallback?: Function): PosisiConfig {
         this.loadingEndCallback = loadingEndCallback;
         return this;
     }
@@ -152,14 +175,19 @@ export class PosisiConfig {
 
     /**
      * this.setFeignDecode(DefaultFeignDecode)
+     * this.setFeignDecode(new DefaultFeignDecode())
      * 设置用户自定义的解码器: 必须实现FeignDecode接口
      * @param userDecode
      */
-    public setFeignDecode(userDecodeCls: any): PosisiConfig {
-        if (!instanceOfFeignDecode(userDecodeCls)) {
-            throw new Error(userDecodeCls + " 必须实现 FeignDecode所有方法!");
+    public setFeignDecode(userDecodeIns: any): PosisiConfig {
+        if (ClassUtil.isClass(userDecodeIns)) {
+            this.userDecodeIns = ClassUtil.newInstance(userDecodeIns, {});
+        } else {
+            this.userDecodeIns = userDecodeIns;
         }
-        this.userDecode = userDecodeCls;
+        if (!instanceOfFeignDecode(this.userDecodeIns)) {
+            throw new Error(this.userDecodeIns + " 必须实现 FeignDecode所有方法!");
+        }
         return this;
     }
 
@@ -167,9 +195,36 @@ export class PosisiConfig {
      * 获取解码器
      */
     public getFeignDecode(): FeignDecode {
-        if (this.userDecode == undefined) {
-            return new DefaultFeignDecode();
+        if (this.userDecodeIns == undefined) {
+            this.userDecodeIns = new DefaultFeignDecode();
         }
-        return ClassUtil.newInstance(this.userDecode, {});
+        return this.userDecodeIns;
     }
+
+    /**
+     * 设置拦截器
+     * @param userInterceptor
+     */
+    public setUserInterceptor(userInterceptorIns: any): PosisiConfig {
+        if (ClassUtil.isClass(userInterceptorIns)) {
+            this.userInterceptorIns = ClassUtil.newInstance(userInterceptorIns, {});
+        } else {
+            this.userInterceptorIns = userInterceptorIns;
+        }
+        if (!instanceOfFeignInterceptor(this.userInterceptorIns)) {
+            throw new Error(this.userInterceptorIns + " 必须实现 FeignInterceptor所有方法!");
+        }
+        return this;
+    }
+
+    /**
+     * 获取用户自定义拦截器
+     */
+    public getUserInterceptor(): FeignInterceptor {
+        if (this.userInterceptorIns == undefined) {
+            this.userInterceptorIns = new DefaultFeignInterceptor();
+        }
+        return this.userInterceptorIns;
+    }
+
 }
